@@ -73,12 +73,9 @@ void display(){
     glEnable(GL_DEPTH_TEST); //「Zバッファ」を有効
     gluLookAt(0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0);   //視点の向き設定
 
-	//次のRGBフレームが来るまで待機
-	WaitForSingleObject(m_hNextImageFrameEvent,INFINITE);
 	//取得をする
 	if(GetRGBImage(image)==-1)
 		return;
-	WaitForSingleObject(m_hNextDepthFrameEvent,INFINITE);
 	if(GetDepthImage(depth)==-1)
 		return;
 
@@ -120,7 +117,7 @@ int init(){
 #if KINECT_DEPTH_WIDTH == 320
 	//奥行き画像の解像度が320x240の場合
 	hr = NuiImageStreamOpen(NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX , NUI_IMAGE_RESOLUTION_320x240 , 0 , 2 , m_hNextDepthFrameEvent , &m_pDepthStreamHandle );
-#else if KINECT_IMAGE_WIDTH == 640
+#else if KINECT_DEPTH_WIDTH == 640
 	//奥行き画像の解像度が640x480の場合
 	hr = NuiImageStreamOpen(NUI_IMAGE_TYPE_DEPTH_AND_PLAYER_INDEX , NUI_IMAGE_RESOLUTION_640x480 , 0 , 2 , m_hNextDepthFrameEvent , &m_pDepthStreamHandle );
 #endif
@@ -210,7 +207,9 @@ int main(int argc, char *argv[]){
 int GetRGBImage(cv::Mat &image){
 //フレームを入れるクラス
 	const NUI_IMAGE_FRAME *pImageFrame = NULL;
-
+	
+	//次のRGBフレームが来るまで待機
+	WaitForSingleObject(m_hNextImageFrameEvent,INFINITE);
 	HRESULT hr = NuiImageStreamGetNextFrame(m_pImageStreamHandle, 30 , &pImageFrame );
 	if( FAILED( hr ) ) 
 		return -1;//取得失敗
@@ -235,7 +234,8 @@ int GetRGBImage(cv::Mat &image){
 int GetDepthImage(cv::Mat &depth){
 	//フレームを入れるクラス
 	const NUI_IMAGE_FRAME *pImageFrame = NULL;
-
+	
+	WaitForSingleObject(m_hNextDepthFrameEvent,INFINITE);
 	HRESULT hr = NuiImageStreamGetNextFrame(m_pDepthStreamHandle, 30 , &pImageFrame );
 	if( FAILED( hr ) ) 
 		return -1;//取得失敗
