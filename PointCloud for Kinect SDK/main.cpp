@@ -40,9 +40,8 @@ Mat pointCloud_XYZ(KINECT_DEPTH_HEGIHT,KINECT_DEPTH_WIDTH,CV_32FC3,cv::Scalar::a
 void retrievePointCloudMap(Mat &depth,Mat &pointCloud_XYZ);		//3次元ポイントクラウドのための座標変換
 void drawPointCloud(Mat &rgbImage,Mat &pointCloud_XYZ);		//ポイントクラウド描画
 
-//RGBデータを取得する関数
-int GetRGBImage(cv::Mat &image);
-int GetDepthImage(cv::Mat &depth);
+//画像データを取得する関数
+int GetImage(cv::Mat &image,HANDLE frameEvent,HANDLE streamHandle);
 
 //openGLのための宣言・定義
 //---変数宣言---
@@ -73,10 +72,9 @@ void display(){
     glEnable(GL_DEPTH_TEST); //「Zバッファ」を有効
     gluLookAt(0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0);   //視点の向き設定
 
-	//取得をする
-	if(GetRGBImage(image)==-1)
+	if(GetImage(image,m_hNextImageFrameEvent,m_pImageStreamHandle)==-1)
 		return;
-	if(GetDepthImage(depth)==-1)
+	if(GetImage(depth,m_hNextDepthFrameEvent,m_pDepthStreamHandle)==-1)
 		return;
 
     //3次元ポイントクラウドのための座標変換
@@ -203,21 +201,20 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-
-int GetRGBImage(cv::Mat &image){
-//フレームを入れるクラス
+int GetImage(cv::Mat &image,HANDLE frameEvent,HANDLE streamHandle){
+	//フレームを入れるクラス
 	const NUI_IMAGE_FRAME *pImageFrame = NULL;
 	
 	//次のRGBフレームが来るまで待機
-	WaitForSingleObject(m_hNextImageFrameEvent,INFINITE);
-	HRESULT hr = NuiImageStreamGetNextFrame(m_pImageStreamHandle, 30 , &pImageFrame );
+	WaitForSingleObject(frameEvent,INFINITE);
+	HRESULT hr = NuiImageStreamGetNextFrame(streamHandle, 30 , &pImageFrame );
 	if( FAILED( hr ) ) 
 		return -1;//取得失敗
 
 	//フレームから画像データの取得
-    INuiFrameTexture * pTexture = pImageFrame->pFrameTexture;
-    NUI_LOCKED_RECT LockedRect;
-    pTexture->LockRect( 0, &LockedRect, NULL, 0 );
+	INuiFrameTexture * pTexture = pImageFrame->pFrameTexture;
+	NUI_LOCKED_RECT LockedRect;
+	pTexture->LockRect( 0, &LockedRect, NULL, 0 );
     
 	if( LockedRect.Pitch != 0 ){
 		//pBitsに画像データが入っている
@@ -225,40 +222,12 @@ int GetRGBImage(cv::Mat &image){
 		memcpy(image.data,pBuffer,image.step * image.rows);
 	}
 
-	hr = NuiImageStreamReleaseFrame( m_pImageStreamHandle, pImageFrame );
+	hr = NuiImageStreamReleaseFrame( streamHandle, pImageFrame );
 	if( FAILED( hr ) ) 
 		return -1;//取得失敗
 
 	return 0;
 }
-int GetDepthImage(cv::Mat &depth){
-	//フレームを入れるクラス
-	const NUI_IMAGE_FRAME *pImageFrame = NULL;
-	
-	WaitForSingleObject(m_hNextDepthFrameEvent,INFINITE);
-	HRESULT hr = NuiImageStreamGetNextFrame(m_pDepthStreamHandle, 30 , &pImageFrame );
-	if( FAILED( hr ) ) 
-		return -1;//取得失敗
-
-	//フレームから画像データの取得
-    INuiFrameTexture * pTexture = pImageFrame->pFrameTexture;
-    NUI_LOCKED_RECT LockedRect;
-    pTexture->LockRect( 0, &LockedRect, NULL, 0 );
-
-	if( LockedRect.Pitch != 0 ){
-		//pBitsに画像データが入っている
-		BYTE * pBuffer = (BYTE*) LockedRect.pBits;
-		memcpy( depth.data, (BYTE*)pBuffer, depth.step * depth.rows );
-	 }
-
-    hr = NuiImageStreamReleaseFrame( m_pDepthStreamHandle, pImageFrame );
-	if( FAILED( hr ) ) 
-		return -1;//取得失敗
-
-	return 0;
-}
-
-
 //ポイントクラウド描画
 void drawPointCloud(Mat &rgbImage,Mat &pointCloud_XYZ){
     static int x,y;
