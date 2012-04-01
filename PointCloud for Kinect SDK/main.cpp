@@ -298,7 +298,7 @@ void retrievePointCloudMap(Mat &depth,Mat &pointCloud_XYZ){
 #if KINECT_DEPTH_WIDTH == 320
 			//奥行き画像の解像度が320x240の場合
 			Vector4 RealPoints = NuiTransformDepthImageToSkeleton(x,y,*dp);
-#else if KINECT_IMAGE_WIDTH == 640
+#else if KINECT_DEPTH_WIDTH == 640
 			//奥行き画像の解像度が640x480の場合
 			Vector4 RealPoints = NuiTransformDepthImageToSkeleton(x,y,*dp, NUI_IMAGE_RESOLUTION_640x480);
 #endif
