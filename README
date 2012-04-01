@@ -1,0 +1,7 @@
+すべてのプログラムはOpenCV2.2とOpenGLを用いています。
+またKinect for Windows SDKはv1.0を用いています。
+各自必要な部分を改良してください。
+
+・サンプルの説明
+PointCloud for Kinect SDK
+　OpenGLを使ったポイントクラウド
